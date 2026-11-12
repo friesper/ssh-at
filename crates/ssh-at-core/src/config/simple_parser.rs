@@ -124,6 +124,7 @@ fn apply_option_to_host(host: &mut HostEntry, key: &str, value: &str) {
         "user" => host.user = Some(value.to_string()),
         "port" => host.port = value.parse().ok(),
         "identityfile" => host.identity_file = Some(PathBuf::from(value)),
+        "identityagent" => host.identity_agent = Some(value.to_string()),
         "proxyjump" => host.proxy_jump = Some(value.to_string()),
         "proxycommand" => host.proxy_command = Some(value.to_string()),
         "forwardagent" => host.forward_agent = parse_yes_no(value),

@@ -7,6 +7,7 @@ export interface HostEntry {
   user?: string
   port?: number
   identity_file?: string
+  identity_agent?: string
   proxy_jump?: string
   proxy_command?: string
   forward_agent?: boolean
@@ -77,6 +78,30 @@ export const deleteHost = async (name: string): Promise<void> => {
     throw error
   }
 }
+
+// 主机标签：ssh_config 无自定义字段，存于 ~/.ssh-at/tags.json
+export type HostTags = Record<string, string[]>
+
+export const loadHostTags = (): Promise<HostTags> =>
+  invoke('load_host_tags')
+
+export const saveHostTags = (host: string, tags: string[]): Promise<void> =>
+  invoke('save_host_tags', { host, tags })
+
+// 中文别名：仅用于界面与托盘展示，不写入 ssh_config
+export type HostAliases = Record<string, string>
+
+export const loadHostAliases = (): Promise<HostAliases> =>
+  invoke('load_host_aliases')
+
+export const saveHostAlias = (host: string, alias: string): Promise<void> =>
+  invoke('save_host_alias', { host, alias })
+
+/**
+ * 在 iTerm2（未安装时回退 Terminal.app）新窗口中打开到指定主机的 SSH 会话
+ */
+export const openHostSession = (host: string): Promise<void> =>
+  invoke('open_host_session', { host })
 
 export const searchHosts = (query: string): Promise<HostEntry[]> =>
   invoke('search_hosts', { query })

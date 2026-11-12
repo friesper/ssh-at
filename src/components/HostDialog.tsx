@@ -25,8 +25,20 @@ import { scanSshKeys } from '../api/tauri'
 interface HostDialogProps {
   open: boolean
   host?: HostEntry
+  /** 当前主机的标签，逗号分隔编辑 */
+  tags?: string[]
+  /** 中文显示别名，仅本地展示 */
+  alias?: string
   onClose: () => void
-  onSave: (host: HostEntry) => void
+  onSave: (host: HostEntry, tags: string[], alias: string) => void
+}
+
+/** 逗号（中英文）、空格均可作为标签分隔符 */
+function parseTags(input: string): string[] {
+  return input
+    .split(/[,，\s]+/)
+    .map((tag) => tag.trim())
+    .filter((tag, index, all) => tag.length > 0 && all.indexOf(tag) === index)
 }
 
 interface TabPanelProps {
@@ -44,8 +56,10 @@ function TabPanel(props: TabPanelProps) {
   )
 }
 
-function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
+function HostDialog({ open, host, tags, alias, onClose, onSave }: HostDialogProps) {
   const [tabValue, setTabValue] = useState(0)
+  const [tagInput, setTagInput] = useState('')
+  const [aliasInput, setAliasInput] = useState('')
   const [proxyType, setProxyType] = useState<'none' | 'jump' | 'socks5' | 'custom'>('none')
   const [socks5Host, setSocks5Host] = useState('')
   const [socks5Port, setSocks5Port] = useState('1080')
@@ -64,6 +78,7 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
     user: '',
     port: 22,
     identity_file: '',
+    identity_agent: '',
     proxy_jump: '',
     proxy_command: '',
     forward_agent: undefined,
@@ -82,6 +97,9 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
   })
 
   useEffect(() => {
+    setTagInput(tags?.join(', ') ?? '')
+    setAliasInput(alias ?? '')
+
     if (host) {
       setFormData({
         ...host,
@@ -209,6 +227,7 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
       user: trimmedUser,
       port: formData.port === 22 ? undefined : formData.port, // 22 是默认端口，不保存
       identity_file: formData.identity_file?.trim() || undefined,
+      identity_agent: formData.identity_agent?.trim() || undefined,
       proxy_jump: formData.proxy_jump?.trim() || undefined,
       proxy_command: formData.proxy_command?.trim() || undefined,
       forward_agent: formData.forward_agent, // 保持原值，如果是 undefined 就是 undefined
@@ -227,7 +246,7 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
     }
 
     try {
-      await onSave(cleanedData)
+      await onSave(cleanedData, parseTags(tagInput), aliasInput.trim())
       // Only close dialog on success
       onClose()
     } catch (error) {
@@ -272,6 +291,17 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
                   autoCorrect: 'off',
                   spellCheck: false
                 }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('hostDialog.fieldDisplayName')}
+                placeholder={t('hostDialog.fieldDisplayNamePlaceholder')}
+                helperText={t('hostDialog.fieldDisplayNameHelper')}
+                value={aliasInput}
+                onChange={(e) => setAliasInput(e.target.value)}
               />
             </Grid>
 
@@ -338,6 +368,33 @@ function HostDialog({ open, host, onClose, onSave }: HostDialogProps) {
                       </Box>
                     </li>
                   )
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={t('hostDialog.fieldTags')}
+                placeholder={t('hostDialog.fieldTagsPlaceholder')}
+                helperText={t('hostDialog.fieldTagsHelper')}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={t('hostDialog.fieldIdentityAgent')}
+                placeholder="SSH_AUTH_SOCK"
+                helperText={t('hostDialog.fieldIdentityAgentHelper')}
+                value={formData.identity_agent || ''}
+                onChange={(e) => handleChange('identity_agent', e.target.value)}
+                inputProps={{
+                  autoCapitalize: 'none',
+                  autoCorrect: 'off',
+                  spellCheck: false
                 }}
               />
             </Grid>

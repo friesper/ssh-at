@@ -147,6 +147,7 @@ fn apply_option_to_host(host: &mut HostEntry, key: &str, value: &str) {
         "user" => host.user = Some(value.to_string()),
         "port" => host.port = value.parse().ok(),
         "identityfile" => host.identity_file = Some(PathBuf::from(value)),
+        "identityagent" => host.identity_agent = Some(value.to_string()),
         "proxyjump" => host.proxy_jump = Some(value.to_string()),
         "proxycommand" => host.proxy_command = Some(value.to_string()),
         "forwardagent" => host.forward_agent = parse_yes_no(value),
@@ -229,6 +230,18 @@ Host github
 
         let config = parse_ssh_config(config_text).unwrap();
         assert_eq!(config.hosts[0].identity_file, Some(PathBuf::from("~/.ssh/id_rsa")));
+    }
+
+    #[test]
+    fn test_parse_identity_agent() {
+        let config_text = r#"
+Host builder
+    HostName builder.internal
+    IdentityAgent SSH_AUTH_SOCK
+"#;
+
+        let config = parse_ssh_config(config_text).unwrap();
+        assert_eq!(config.hosts[0].identity_agent.as_deref(), Some("SSH_AUTH_SOCK"));
     }
 
     #[test]

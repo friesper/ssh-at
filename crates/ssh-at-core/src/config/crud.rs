@@ -338,6 +338,9 @@ pub fn serialize_ssh_config(config: &SshConfig) -> Result<String> {
         if let Some(ref identity_file) = host.identity_file {
             output.push_str(&format!("  IdentityFile {}\n", identity_file.display()));
         }
+        if let Some(ref identity_agent) = host.identity_agent {
+            output.push_str(&format!("  IdentityAgent {}\n", identity_agent));
+        }
         if let Some(ref proxy_jump) = host.proxy_jump {
             output.push_str(&format!("  ProxyJump {}\n", proxy_jump));
         }
@@ -405,6 +408,7 @@ mod tests {
             user: Some("testuser".to_string()),
             port: Some(22),
             identity_file: None,
+            identity_agent: None,
             proxy_jump: None,
             proxy_command: None,
             forward_agent: None,
@@ -451,6 +455,7 @@ mod tests {
             user: Some("admin".to_string()),
             port: Some(2222),
             identity_file: Some(PathBuf::from("~/.ssh/id_rsa")),
+            identity_agent: Some("SSH_AUTH_SOCK".to_string()),
             proxy_jump: Some("bastion".to_string()),
             proxy_command: Some("ssh -W %h:%p bastion".to_string()),
             forward_agent: Some(true),
@@ -484,6 +489,7 @@ mod tests {
         assert!(serialized.contains("User admin"));
         assert!(serialized.contains("Port 2222"));
         assert!(serialized.contains("IdentityFile"));
+        assert!(serialized.contains("IdentityAgent SSH_AUTH_SOCK"));
         assert!(serialized.contains("ProxyJump bastion"));
         assert!(serialized.contains("ProxyCommand"));
         assert!(serialized.contains("ForwardAgent yes"));
